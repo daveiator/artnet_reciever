@@ -1,4 +1,4 @@
-//! [![Latest Release](https://img.shields.io/crates/v/artnet_reciever?style=for-the-badge)](https://crates.io/crates/artnet_reciever) [![Documentation](https://img.shields.io/docsrs/artnet_reciever?style=for-the-badge)](https://docs.rs/artnet_reciever) [![License](https://img.shields.io/crates/l/artnet_reciever?style=for-the-badge)]()
+//! [![Latest Release](https://img.shields.io/crates/v/artnet_reciever?style=for-the-badge)](https://crates.io/crates/artnet_reciever) [![Documentation](https://img.shields.io/docsrs/artnet_reciever?style=for-the-badge)](https://docs.rs/artnet_reciever) [![Build](https://img.shields.io/github/actions/workflow/status/daveiator/artnet_reciever/rust.yml?style=for-the-badge)]() [![License](https://img.shields.io/crates/l/artnet_reciever?style=for-the-badge)]()
 //! 
 //! A simple artnet reciever based on the artnet_protocol crate
 //! 
