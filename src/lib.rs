@@ -1,12 +1,55 @@
+//! [![Latest Release](https://img.shields.io/crates/v/artnet_reciever?style=for-the-badge)](https://crates.io/crates/artnet_reciever) [![Documentation](https://img.shields.io/docsrs/artnet_reciever?style=for-the-badge)](https://docs.rs/artnet_reciever) [![License](https://img.shields.io/crates/l/artnet_reciever?style=for-the-badge)]()
+//! 
+//! A simple artnet reciever based on the artnet_protocol crate
+//! 
+//! <br>
+//! 
+//! ## Usage
+//! 
+//! ```rust
+//! use artnet_reciever::ArtnetRecieverBuilder;
+//! 
+//! fn main() {
+//!     let reciever = ArtnetRecieverBuilder::default().build().unwrap();
+//! #   std::process::exit(0);
+//!     for packet in reciever {
+//!         println!("{:?}", packet);
+//!     }
+//! }
+//! ```
 use std::{net::{UdpSocket, SocketAddr, Ipv4Addr, SocketAddrV4}, thread};
 use socket2::Socket;
 use std::sync::mpsc;
 use artnet_protocol::{ArtCommand, PollReply};
 
 
-
+/// The reciever end of the channel which recieves the artnet data
+/// 
+/// The packets recieved are of the type [`artnet_protocol::Output`]
+/// 
+/// If the reciever is dropped, the thread will be stopped.
 pub type ArtnetReciever = mpsc::Receiver<artnet_protocol::Output>;
 
+/// A builder for the artnet reciever
+/// 
+/// ## Example:
+/// ```rust
+/// use artnet_reciever::ArtnetRecieverBuilder;
+/// 
+/// fn main() {
+///     let reciever = ArtnetRecieverBuilder::default().build().unwrap();
+/// #   std::process::exit(0);
+///     for packet in reciever {
+///         println!("{:?}", packet);
+///     }
+/// }
+/// ```
+/// 
+/// ## Default values:
+/// 
+/// * **address:** `0.0.0.0:6454`
+/// * **reuse_address:** `true`
+/// * **poll_reply_data:** `None`
 pub struct ArtnetRecieverBuilder {
     address: SocketAddr,
     reuse_address: bool,
@@ -25,30 +68,86 @@ impl Default for ArtnetRecieverBuilder {
 
 impl ArtnetRecieverBuilder {
     
+    /// Sets the **ip** and **port** to bind to
+    /// ```rust
+    /// # use artnet_reciever::ArtnetRecieverBuilder;
+    /// # fn main() {
+    /// # let mut builder = ArtnetRecieverBuilder::default();
+    /// builder.socket_address("127.0.0.1:6454".parse().unwrap());
+    /// # }
+    /// ```
     pub fn socket_address(mut self, address: SocketAddrV4) -> Self {
         self.address = address.into();
         self
     }
 
+    /// Sets the **ip** to bind to
+    /// ```rust
+    /// # use artnet_reciever::ArtnetRecieverBuilder;
+    /// # fn main() {
+    /// # let mut builder = ArtnetRecieverBuilder::default();
+    /// builder.ip_address("127.0.0.1".parse().unwrap());
+    /// # }
+    /// ```
     pub fn ip_address(mut self, ip: Ipv4Addr) -> Self {
         self.address.set_ip(ip.into());
         self
     }
 
+    /// Sets the **port** to bind to
+    /// ```rust
+    /// # use artnet_reciever::ArtnetRecieverBuilder;
+    /// # fn main() {
+    /// # let mut builder = ArtnetRecieverBuilder::default();
+    /// builder.port(1234);
+    /// # }
+    /// ```
     pub fn port(mut self, port: u16) -> Self {
         self.address.set_port(port);
         self
     }
+
+    /// Sets the **reuse_address** flag, which inernally calls [`socket2::Socket::set_reuse_address`] when the socket is created
+    /// This is useful when multiple sockets need to listen on the same port
+    /// ```rust
+    /// # use artnet_reciever::ArtnetRecieverBuilder;
+    /// # fn main() {
+    /// # let mut builder = ArtnetRecieverBuilder::default();
+    /// builder.reuse_address(true);
+    /// # }
+    /// ```
     pub fn reuse_address(mut self, reuse_address: bool) -> Self {
         self.reuse_address = reuse_address;
         self
     }
 
+    /// Sets a custom [`artnet_protocol::PollReply`] packet to be sent when a [`artnet_protocol::ArtCommand::Poll`] is recieved
+    /// If none is set, no reply will be sent
+    /// 
+    /// For more information on the [`artnet_protocol::PollReply`] packet, see the documentation of the [`artnet_protocol`] crate or the [Art-Net 4 Specification](https://artisticlicence.com/WebSiteMaster/User%20Guides/art-net.pdf#page=33)
+    /// 
+    /// Some fields of the [`artnet_protocol::PollReply`] packet are ignored, and will be set by the reciever, which are:
+    /// * **address:**
+    /// * **port:**
+    /// * **bind_ip:**
+    /// 
     pub fn poll_reply(mut self, poll_reply_data: PollReply) -> Self {
         self.poll_reply_data = Some(poll_reply_data);
         self
     }
 
+    /// Builds the reciever
+    ///
+    /// An [`std::io::error`] is returned if the socket could not be created or bound
+    /// 
+    /// [`std::io::error`]: https://doc.rust-lang.org/std/io/struct.Error.html
+    /// 
+    /// ```rust
+    /// # use artnet_reciever::ArtnetRecieverBuilder;
+    /// # fn main() {
+    /// let reciever = ArtnetRecieverBuilder::default().build().unwrap();
+    /// # }
+    /// ```
     pub fn build(&self) -> std::io::Result<ArtnetReciever> {
         let socket = Socket::new(socket2::Domain::IPV4, socket2::Type::DGRAM, Some(socket2::Protocol::UDP))?;
         socket.set_reuse_address(self.reuse_address)?;
