@@ -66,6 +66,16 @@ impl Default for ArtnetRecieverBuilder {
     }
 }
 
+impl Clone for ArtnetRecieverBuilder {
+    fn clone(&self) -> Self {
+        Self {
+            address: self.address,
+            reuse_address: self.reuse_address,
+            poll_reply_data: clone_poll_reply_data(&self.poll_reply_data),
+        }
+    }
+}
+
 impl ArtnetRecieverBuilder {
     
     /// Sets the **ip** and **port** to bind to
