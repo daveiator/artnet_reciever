@@ -25,10 +25,10 @@ use artnet_protocol::{ArtCommand, PollReply};
 
 /// The reciever end of the channel which recieves the artnet data
 /// 
-/// The packets recieved are of the type [`artnet_protocol::Output`]
+/// The packets recieved are tuple objects consisting of the senders [`std::net::SocketAddr`] and the artnet data of type [`artnet_protocol::Output`]
 /// 
 /// If the reciever is dropped, the thread will be stopped.
-pub type ArtnetReciever = mpsc::Receiver<artnet_protocol::Output>;
+pub type ArtnetReciever = mpsc::Receiver<(SocketAddr, artnet_protocol::Output)>;
 
 /// A builder for the artnet reciever
 /// 
@@ -218,7 +218,7 @@ impl ArtnetRecieverBuilder {
                         }
                     },
                     ArtCommand::Output(output) => {
-                        match tx.send(output) {
+                        match tx.send((controller_address, output)) {
                             Ok(_) => {}
                             Err(_) => {
                                 //couldn't send data, receiver has been dropped
